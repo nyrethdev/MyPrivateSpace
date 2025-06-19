@@ -1400,7 +1400,7 @@ System Information:<br>
         let lofiAudio = null;
         let lofiTrackIndex = 0;
         const lofiTracks = [
-            { name: "Nightfall", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+            { name: "Nightfall", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-SSong-1.mp3" },
             { name: "Coffee Shop", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
             { name: "Rainy Day", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
         ];
@@ -1554,11 +1554,11 @@ System Information:<br>
                     window.classList.add('bg-white');
                 });
                 
-                var(--primary-bg) = '#fff';
-                var(--secondary-bg) = '#eee';
-                var(--accent) = '#000';
-                var(--text) = '#000';
-                var(--text-secondary) = '#555';
+                document.documentElement.style.setProperty('--primary-bg', '#fff');
+                document.documentElement.style.setProperty('--secondary-bg', '#eee');
+                document.documentElement.style.setProperty('--accent', '#000');
+                document.documentElement.style.setProperty('--text', '#000');
+                document.documentElement.style.setProperty('--text-secondary', '#555');
             } else {
                 // Switch to dark theme
                 document.body.classList.add('bg-black');
@@ -1571,11 +1571,11 @@ System Information:<br>
                     window.classList.remove('bg-white');
                 });
                 
-                var(--primary-bg) = '#000';
-                var(--secondary-bg) = '#111';
-                var(--accent) = '#fff';
-                var(--text) = '#fff';
-                var(--text-secondary) = '#aaa';
+                document.documentElement.style.setProperty('--primary-bg', '#000');
+                document.documentElement.style.setProperty('--secondary-bg', '#111');
+                document.documentElement.style.setProperty('--accent', '#fff');
+                document.documentElement.style.setProperty('--text', '#fff');
+                document.documentElement.style.setProperty('--text-secondary', '#aaa');
             }
         }
         
