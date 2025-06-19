@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS PRIVATE SPACE | 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary-bg: #000;
+            --secondary-bg: #111;
+            --accent: #fff;
+            --text: #fff;
+            --text-secondary: #aaa;
+        }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+            transition: all 0.5s ease;
+        }
+        
+        .terminal-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text);
+            width: 100%;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .terminal-input::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        .file-upload {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        
+        .file-upload input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .music-progress {
+            height: 2px;
+            background: #333;
+        }
+        
+        .music-progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+        }
+        
+        .window {
+            border: 1px solid #333;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            backdrop-filter: blur(10px);
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        
+        .window.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .window:hover {
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+        
+        .window-header {
+            border-bottom: 1px solid #333;
+            padding: 8px 12px;
+            cursor: move;
+            user-select: none;
+        }
+        
+        .window-content {
+            padding: 12px;
+        }
+        
+        .draggable {
+            position: absolute;
+            z-index: 1000;
+        }
+        
+        .file-icon {
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 5px;
+        }
+        
+        .file-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .terminal-output {
+            height: 300px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #333 #000;
+        }
+        
+        .terminal-output::-webkit-scrollbar {
+            width: 5px;
+        }
+        
+        .terminal-output::-webkit-scrollbar-track {
+            background: #000;
+        }
+        
+        .terminal-output::-webkit-scrollbar-thumb {
+            background-color: #333;
+            border-radius: 5px;
+        }
+        
+        .blink {
+            animation: blink 1s step-end infinite;
+        }
+        
+        @keyframes blink {
+            from, to { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        .grid-item {
+            transition: transform 0.2s ease;
+        }
+        
+        .grid-item:hover {
+            transform: scale(1.05);
+        }
+        
+        .desktop-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(20,20,20,0.7) 100%);
+            z-index: -1;
+        }
+        
+        .visualizer {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            height: 60px;
+            gap: 2px;
+            margin: 20px 0;
+        }
+        
+        .visualizer-bar {
+            width: 4px;
+            background: var(--accent);
+            border-radius: 2px;
+            transition: height 0.1s ease;
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #333;
+            padding: 10px 15px;
+            border-radius: 5px;
+            transform: translateX(200%);
+            transition: transform 0.3s ease;
+            z-index: 2000;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .system-stats {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 10px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .dropzone {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 3000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .dropzone.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .preview-window {
+            width: 80%;
+            height: 80%;
+            max-width: 800px;
+        }
+        
+        .preview-content {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .preview-text {
+            white-space: pre-wrap;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 20px;
+        }
+        
+        .typing-effect {
+            border-right: 2px solid var(--accent);
+            animation: blink 0.7s step-end infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.1); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+        
+        .gradient-text {
+            background: linear-gradient(90deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .rain-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .rain-drop {
+            position: absolute;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.3);
+            animation: rain-fall linear infinite;
+        }
+        
+        @keyframes rain-fall {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+        
+        .lofi-player {
+            width: 300px;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .lofi-visualizer {
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 2px;
+            padding: 20px;
+        }
+        
+        .lofi-bar {
+            width: 4px;
+            background: #fff;
+            border-radius: 2px;
+            transition: height 0.1s ease;
+        }
+        
+        .lofi-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .lofi-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .lofi-button:hover {
+            transform: scale(1.2);
+        }
+        
+        .lofi-title {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        
+        .lofi-time {
+            text-align: center;
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 10px;
+        }
+        
+        .lofi-progress {
+            width: 80%;
+            height: 2px;
+            background: #333;
+            margin: 20px auto;
+        }
+        
+        .lofi-progress-fill {
+            height: 100%;
+            background: #fff;
+            width: 0%;
+        }
+        
+        .notepad {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            resize: none;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            padding: 10px;
+        }
+        
+        .notepad-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .notepad-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 5px;
+        }
+        
+        .notepad-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #333;
+            color: var(--text);
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .notepad-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        @media (max-width: 768px) {
+            .window {
+                width: 90% !important;
+                left: 5% !important;
+            }
+            
+            #terminal-window {
+                height: 60vh !important;
+            }
+            
+            .file-icon {
+                padding: 5px;
+                font-size: 12px;
+            }
+            
+            .lofi-player {
+                width: 250px;
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="relative">
+    <!-- Desktop Background -->
+    <div class="desktop-bg"></div>
+    
+    <!-- Rain Effect (can be toggled) -->
+    <div class="rain-effect" id="rain-effect"></div>
+    
+    <!-- Dropzone for drag-and-drop upload -->
+    <div class="dropzone" id="dropzone">
+        <div class="text-2xl mb-4">DROP FILES ANYWHERE TO UPLOAD</div>
+        <div class="text-sm text-gray-400">Supported: Images, Audio, Text, Videos</div>
+    </div>
+    
+    <!-- Preview Window -->
+    <div class="draggable window bg-black hidden preview-window" id="preview-window">
+        <div class="window-header flex justify-between items-center">
+            <div>FILE PREVIEW</div>
+            <button class="text-xs hover:text-gray-400 close-btn" data-window="preview">X</button>
+        </div>
+        <div class="window-content preview-content" id="preview-content">
+            <!-- Preview content will be inserted here -->
+        </div>
+    </div>
+    
+    <!-- Main Desktop Area -->
+    <div class="absolute inset-0 flex flex-col">
+        <!-- Top Bar -->
+        <div class="bg-black border-b border-gray-800 py-2 px-4 flex justify-between items-center">
+            <div class="text-sm gradient-text">NEXUS PRIVATE SPACE | 2025 EDITION</div>
+            <div class="flex space-x-4">
+                <button id="terminal-btn" class="hover:text-gray-400 pulse">TERMINAL</button>
+                <button id="music-btn" class="hover:text-gray-400">MUSIC</button>
+                <button id="files-btn" class="hover:text-gray-400">FILES</button>
+                <button id="upload-btn" class="hover:text-gray-400">UPLOAD</button>
+                <button id="notes-btn" class="hover:text-gray-400">NOTES</button>
+                <button id="calc-btn" class="hover:text-gray-400">CALC</button>
+                <button id="lofi-btn" class="hover:text-gray-400">LOFI</button>
+                <button id="export-btn" class="hover:text-gray-400">EXPORT</button>
+            </div>
+            <div class="text-xs text-gray-500" id="clock">00:00:00</div>
+        </div>
+        
+        <!-- Desktop Grid -->
+        <div class="flex-grow relative overflow-hidden p-4" id="desktop">
+            <!-- Files will appear here when uploaded -->
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-gray-600" id="desktop-message">
+                <div class="text-4xl mb-4 floating">⚡</div>
+                <div>DRAG AND DROP FILES HERE</div>
+                <div class="text-sm mt-2">or use the UPLOAD button</div>
+            </div>
+        </div>
+        
+        <!-- Dock -->
+        <div class="bg-black border-t border-gray-800 py-2 px-4 flex justify-center space-x-6">
+            <button class="text-xs hover:text-gray-400" id="show-all">SHOW ALL</button>
+            <button class="text-xs hover:text-gray-400" id="hide-all">HIDE ALL</button>
+            <button class="text-xs hover:text-gray-400" id="toggle-theme">TOGGLE THEME</button>
+            <button class="text-xs hover:text-gray-400" id="toggle-rain">TOGGLE RAIN</button>
+        </div>
+        
+        <!-- System Stats -->
+        <div class="system-stats">
+            <div>CPU: <span id="cpu-usage">0%</span></div>
+            <div>MEM: <span id="mem-usage">0MB/0MB</span></div>
+            <div>STORAGE: <span id="storage-usage">0MB/0MB</span></div>
+        </div>
+    </div>
+    
+    <!-- Terminal Window -->
+    <div class="draggable window bg-black hidden" id="terminal-window" style="width: 700px; height: 500px; top: 100px; left: 100px;">
+        <div class="window-header flex justify-between items-center">
+            <div>NEXUS TERMINAL</div>
+            <button class="text-xs hover:text-gray-400 close-btn" data-window="terminal">X</button>
+        </div>
+        <div class="window-content h-full flex flex-col">
+            <div class="terminal-output flex-grow overflow-y-auto mb-2 text-sm" id="terminal-output">
+                <div class="text-green-400">╔════════════════════════════════════╗</div>
+                <div class="text-green-400">║ NEXUS TERMINAL v3.1.0              ║</div>
+                <div class="text-green-400">║ Type 'help' for available commands ║</div>
+                <div class="text-green-400">╚════════════════════════════════════╝</div>
+                <div class="text-gray-500">--------------------------------</div>
+            </div>
+            <div class="flex items-center">
+                <span class="mr-2 text-green-400">></span>
+                <input type="text" class="terminal-input flex-grow" id="terminal-command" placeholder="Enter command...">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Music Player Window -->
+    <div class="draggable window bg-black hidden" id="music-window" style="width: 500px; height: 300px; top: 150px; left: 300px;">
+        <div class="window-header flex justify-between items-center">
+            <div>NEXUS MUSIC PLAYER</div>
+            <button class="text-xs hover:text-gray-400 close-btn" data-window="music">X</button>
+        </div>
+        <div class="window-content h-full flex flex-col">
+            <div class="flex-grow flex flex-col items-center justify-center">
+                <div class="text-xl mb-2" id="now-playing">NO TRACK SELECTED</div>
+                <div class="text-xs text-gray-500 mb-4" id="track-time">0:00 / 0:00</div>
+                <div class="visualizer" id="visualizer"></div>
+                <div class="music-progress w-full mb-4">
+                    <div class="music-progress-fill" id="music-progress"></div>
+                </div>
+                <div class="flex space-x-6">
+                    <button class="hover:text-gray-400 text-xl" id="prev-track">⏮</button>
+                    <button class="hover:text-gray-400 text-2xl" id="play-pause">⏯</button>
+                    <button class="hover:text-gray-400 text-xl" id="next-track">⏭</button>
+                    <button class="hover:text-gray-400 text-xl" id="volume-down">🔉</button>
+                    <button class="hover:text-gray-400 text-xl" id="volume-up">🔊</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- File Manager Window -->
+    <div class="draggable window bg-black hidden" id="files-window" style="width: 600px; height: 500px; top: 200px; left: 200px;">
+        <div class="window-header flex justify-between items-center">
+            <div>NEXUS FILE MANAGER</div>
+            <button class="text-xs hover:text-gray-400 close-btn" data-window="files">X</button>
+        </div>
+        <div class="window-content h-full flex flex-col">
+            <div class="flex justify-between mb-4">
+                <div class="text-sm">Storage: <span id="file-storage">0MB used</span></div>
+                <button class="text-xs hover:text-gray-400" id="refresh-files">REFRESH</button>
+            </div>
+            <div class="flex-grow overflow-y-auto">
+                <div class="grid grid-cols-5 gap-4" id="file-grid">
+                    <!-- Files will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upload Window -->
+    <div class="draggable window bg-black hidden" id="upload-window" style="width: 400px; height: 200px; top: 250px; left: 350px;">
+        <div class="window-header flex justify-between items-center">
+            <div>NEXUS FILE UPLOAD</div>
+            <button class="text-xs hover:text-gray-400 close-btn" data-window="upload">X</button>
+        </div>
+        <div class="window-content h-full flex flex-col items-center justify-center">
+            <div class="file-upload mb-4">
+                <button class="border border-gray-700 px-4 py-2 hover:bg-gray-900">SELECT FILES</button>
+                <input type="file" id="file-input" multiple>
+            </div>
+            <div class="text-xs text-gray-500" id="upload-status">NO FILES SELECTED</div>
+        </div>
+    </div>
+    
+    <!-- Notes Window -->
+    <div class="draggable window bg-black hidden" id="notes-window" style="width: 500px; height: 500px; top: 150px; left: 500px;">
+        <div class="window-header flex justify-between items-center">
+            <div>NEXUS NOTES</div>
+            <button class="text-xs hover:text-gray-400 close-btn" data-window="notes">X</button>
+        </div>
+        <div class="window-content h-full flex flex-col">
+            <div class="notepad-container">
+                <div class="notepad-toolbar">
+                    <button class="notepad-button" id="save-note">SAVE</button>
+                    <button class="notepad-button" id="download-note">DOWNLOAD</button>
+                    <button class="notepad-button" id="clear-note">CLEAR</button>
+                </div>
+                <textarea class="notepad" id="notes-text" placeholder="Type your notes here..."></textarea>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Calculator Window -->
+    <div class="draggable window bg-black hidden" id="calc-window" style="width: 300px; height: 400px; top: 200px; left: 600px;">
+        <div class="window-header flex justify-between items-center">
+            <div>NEXUS CALCULATOR</div>
+            <button class="text-xs hover:text-gray-400 close-btn" data-window="calc">X</button>
+        </div>
+        <div class="window-content h-full flex flex-col">
+            <input type="text" class="bg-transparent border-b border-gray-700 mb-4 py-2 text-right outline-none" id="calc-display" readonly>
+            <div class="grid grid-cols-4 gap-2">
+                <button class="bg-gray-900 hover:bg-gray-800 py-2" onclick="appendToCalc('7')">7</button>
+                <button class="bg-gray-900 hover:bg-gray-800 py-2" onclick="appendToCalc('8')">8</button>
+                <button class="bg-gray-900 hover:bg-gray-800 py-2" onclick="appendToCalc('9')">9</button>
+                <button class="bg-gray-800 hover:bg-gray-700 py-2" onclick="appendToCalc('+')">+</button>
+                <button class="bg-gray-900 hover:bg-gray-800 py-2" onclick="appendToCalc('4')">4</button>
+                <button class="bg-gray-900 hover:bg-gray-800 py-2" onclick="appendToCalc('5')">5</button>
+                <button class="bg-gray-900 hover:bg-gray-800 py-2" onclick="appendToCalc('6')">6</button>
+                <button class="bg-gray-800 hover:bg-gray-700 py-2" onclick="appendToCalc('-')">-</button>
+                <button class="bg-gray-900 hover:bg-gray-800 py-2" onclick="appendToCalc('1')">1</button>
+                <button class="bg-gray-900 hover:bg-gray-800 py-2" onclick="appendToCalc('2')">2</button>
+                <button class="bg-gray-900 hover:bg-gray-800 py-2" onclick="appendToCalc('3')">3</button>
+                <button class="bg-gray-800 hover:bg-gray-700 py-2" onclick="appendToCalc('*')">×</button>
+                <button class="bg-gray-900 hover:bg-gray-800 py-2" onclick="appendToCalc('0')">0</button>
+                <button class="bg-gray-900 hover:bg-gray-800 py-2" onclick="appendToCalc('.')">.</button>
+                <button class="bg-gray-800 hover:bg-gray-700 py-2" onclick="calculate()">=</button>
+                <button class="bg-gray-800 hover:bg-gray-700 py-2" onclick="appendToCalc('/')">÷</button>
+            </div>
+            <div class="flex justify-between mt-2">
+                <button class="text-xs hover:text-gray-400 w-full" onclick="clearCalc()">CLEAR</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lofi Player Window -->
+    <div class="draggable window bg-black hidden" id="lofi-window" style="width: 350px; height: 500px; top: 100px; left: 400px;">
+        <div class="window-header flex justify-between items-center">
+            <div>NEXUS LOFI PLAYER</div>
+            <button class="text-xs hover:text-gray-400 close-btn" data-window="lofi">X</button>
+        </div>
+        <div class="window-content h-full flex flex-col items-center justify-center">
+            <div class="lofi-player">
+                <div class="lofi-title">Nexus Lofi Station</div>
+                <div class="lofi-visualizer" id="lofi-visualizer"></div>
+                <div class="lofi-progress">
+                    <div class="lofi-progress-fill" id="lofi-progress"></div>
+                </div>
+                <div class="lofi-time" id="lofi-time">0:00 / 0:00</div>
+                <div class="lofi-controls">
+                    <button class="lofi-button" id="lofi-prev">⏮</button>
+                    <button class="lofi-button" id="lofi-play">⏯</button>
+                    <button class="lofi-button" id="lofi-next">⏭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Export Data Window -->
+    <div class="draggable window bg-black hidden" id="export-window" style="width: 400px; height: 200px; top: 250px; left: 350px;">
+        <div class="window-header flex justify-between items-center">
+            <div>EXPORT DATA</div>
+            <button class="text-xs hover:text-gray-400 close-btn" data-window="export">X</button>
+        </div>
+        <div class="window-content h-full flex flex-col items-center justify-center">
+            <div class="text-center mb-4">
+                <div class="mb-2">Export all your Nexus Private Space data</div>
+                <div class="text-xs text-gray-500">Includes files, notes, and settings</div>
+            </div>
+            <button class="border border-gray-700 px-4 py-2 hover:bg-gray-900" id="export-data">EXPORT NOW</button>
+        </div>
+    </div>
+    
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <div class="flex items-center">
+            <div class="mr-2">⚡</div>
+            <div id="notification-message">Notification</div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize visualizer bars
+        const visualizer = document.getElementById('visualizer');
+        const lofiVisualizer = document.getElementById('lofi-visualizer');
+        
+        for (let i = 0; i < 30; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'visualizer-bar';
+            bar.style.height = `${Math.random() * 30 + 5}px`;
+            visualizer.appendChild(bar);
+            
+            if (i < 20) {
+                const lofiBar = document.createElement('div');
+                lofiBar.className = 'lofi-bar';
+                lofiBar.style.height = `${Math.random() * 30 + 5}px`;
+                lofiVisualizer.appendChild(lofiBar);
+            }
+        }
+        
+        // Update visualizer bars
+        function updateVisualizer() {
+            const bars = document.querySelectorAll('.visualizer-bar');
+            bars.forEach(bar => {
+                bar.style.height = `${Math.random() * 30 + 5}px`;
+            });
+            
+            if (currentAudio && !currentAudio.paused) {
+                requestAnimationFrame(updateVisualizer);
+            }
+        }
+        
+        function updateLofiVisualizer() {
+            const bars = document.querySelectorAll('.lofi-bar');
+            bars.forEach(bar => {
+                bar.style.height = `${Math.random() * 30 + 5}px`;
+            });
+            
+            if (lofiAudio && !lofiAudio.paused) {
+                requestAnimationFrame(updateLofiVisualizer);
+            }
+        }
+        
+        // Show notification
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            document.getElementById('notification-message').textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Clock
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+        
+        // System stats simulation
+        function updateSystemStats() {
+            // Simulate CPU usage
+            const cpuUsage = Math.floor(Math.random() * 30) + 5;
+            document.getElementById('cpu-usage').textContent = `${cpuUsage}%`;
+            
+            // Simulate memory usage
+            const usedMem = Math.floor(Math.random() * 4000) + 1000;
+            const totalMem = 8000;
+            document.getElementById('mem-usage').textContent = `${usedMem}MB/${totalMem}MB`;
+            
+            // Calculate storage usage
+            const files = JSON.parse(localStorage.getItem('private-space-files') || '[]');
+            const usedStorage = files.reduce((sum, file) => sum + file.size, 0);
+            const totalStorage = 100000000; // 100MB
+            document.getElementById('storage-usage').textContent = 
+                `${Math.round(usedStorage / 1000000)}MB/${Math.round(totalStorage / 1000000)}MB`;
+            
+            // Update file manager storage display
+            document.getElementById('file-storage').textContent = 
+                `${Math.round(usedStorage / 1000000)}MB used (${Math.round(usedStorage / totalStorage * 100)}%)`;
+        }
+        setInterval(updateSystemStats, 2000);
+        updateSystemStats();
+        
+        // Window management
+        const windows = {
+            'terminal': document.getElementById('terminal-window'),
+            'music': document.getElementById('music-window'),
+            'files': document.getElementById('files-window'),
+            'upload': document.getElementById('upload-window'),
+            'notes': document.getElementById('notes-window'),
+            'calc': document.getElementById('calc-window'),
+            'lofi': document.getElementById('lofi-window'),
+            'export': document.getElementById('export-window'),
+            'preview': document.getElementById('preview-window')
+        };
+        
+        // Make windows visible after a small delay for animation
+        setTimeout(() => {
+            Object.values(windows).forEach(window => {
+                if (!window.classList.contains('hidden')) {
+                    window.classList.add('visible');
+                }
+            });
+        }, 100);
+        
+        // Make windows draggable
+        let activeWindow = null;
+        let offsetX, offsetY;
+        
+        document.querySelectorAll('.window-header').forEach(header => {
+            header.addEventListener('mousedown', (e) => {
+                activeWindow = header.parentElement;
+                offsetX = e.clientX - activeWindow.getBoundingClientRect().left;
+                offsetY = e.clientY - activeWindow.getBoundingClientRect().top;
+                
+                // Bring window to front
+                Object.values(windows).forEach(window => {
+                    window.style.zIndex = 1000;
+                });
+                activeWindow.style.zIndex = 2000;
+            });
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (activeWindow) {
+                activeWindow.style.left = (e.clientX - offsetX) + 'px';
+                activeWindow.style.top = (e.clientY - offsetY) + 'px';
+            }
+        });
+        
+        document.addEventListener('mouseup', () => {
+            activeWindow = null;
+        });
+        
+        // Window controls
+        document.querySelectorAll('.close-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const windowId = e.target.getAttribute('data-window');
+                windows[windowId].classList.remove('visible');
+                setTimeout(() => {
+                    windows[windowId].classList.add('hidden');
+                }, 300);
+            });
+        });
+        
+        function showWindow(windowId) {
+            windows[windowId].classList.remove('hidden');
+            setTimeout(() => {
+                windows[windowId].classList.add('visible');
+            }, 10);
+            
+            // Bring window to front
+            Object.values(windows).forEach(window => {
+                window.style.zIndex = 1000;
+            });
+            windows[windowId].style.zIndex = 2000;
+        }
+        
+        document.getElementById('terminal-btn').addEventListener('click', () => {
+            showWindow('terminal');
+        });
+        
+        document.getElementById('music-btn').addEventListener('click', () => {
+            showWindow('music');
+        });
+        
+        document.getElementById('files-btn').addEventListener('click', () => {
+            showWindow('files');
+            refreshFileManager();
+        });
+        
+        document.getElementById('upload-btn').addEventListener('click', () => {
+            showWindow('upload');
+        });
+        
+        document.getElementById('notes-btn').addEventListener('click', () => {
+            showWindow('notes');
+            loadNotes();
+        });
+        
+        document.getElementById('calc-btn').addEventListener('click', () => {
+            showWindow('calc');
+        });
+        
+        document.getElementById('lofi-btn').addEventListener('click', () => {
+            showWindow('lofi');
+            if (!lofiAudio) {
+                initLofiPlayer();
+            }
+        });
+        
+        document.getElementById('export-btn').addEventListener('click', () => {
+            showWindow('export');
+        });
+        
+        document.getElementById('show-all').addEventListener('click', () => {
+            Object.values(windows).forEach(window => {
+                if (window.classList.contains('hidden')) {
+                    window.classList.remove('hidden');
+                    setTimeout(() => {
+                        window.classList.add('visible');
+                    }, 10);
+                }
+            });
+        });
+        
+        document.getElementById('hide-all').addEventListener('click', () => {
+            Object.values(windows).forEach(window => {
+                window.classList.remove('visible');
+                setTimeout(() => {
+                    window.classList.add('hidden');
+                }, 300);
+            });
+        });
+        
+        document.getElementById('refresh-files').addEventListener('click', () => {
+            refreshFileManager();
+            showNotification('File manager refreshed');
+        });
+        
+        // Terminal functionality
+        const terminalOutput = document.getElementById('terminal-output');
+        const terminalInput = document.getElementById('terminal-command');
+        
+        terminalInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const command = terminalInput.value.trim();
+                terminalInput.value = '';
+                
+                // Add command to output
+                terminalOutput.innerHTML += `<div class="text-green-400">> ${command}</div>`;
+                
+                // Process command
+                processCommand(command);
+                
+                // Scroll to bottom
+                terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            }
+        });
+        
+        function processCommand(command) {
+            let output = '';
+            
+            switch (command.toLowerCase()) {
+                case 'help':
+                    output = `
+Available commands:<br>
+- help: Show this help<br>
+- clear: Clear terminal<br>
+- ls: List files<br>
+- play [filename]: Play audio file<br>
+- stop: Stop audio playback<br>
+- time: Show current time<br>
+- date: Show current date<br>
+- theme: Toggle dark/light theme<br>
+- rain: Toggle rain effect<br>
+- notes: Open notes<br>
+- calc: Open calculator<br>
+- lofi: Open lofi player<br>
+- weather: Show weather forecast<br>
+- reboot: Refresh the page<br>
+- sysinfo: Show system information<br>
+- export: Export all data<br>
+                    `;
+                    break;
+                    
+                case 'clear':
+                    terminalOutput.innerHTML = '';
+                    return;
+                    
+                case 'ls':
+                    const files = JSON.parse(localStorage.getItem('private-space-files') || '[]');
+                    if (files.length === 0) {
+                        output = 'No files found. Use UPLOAD to add files.';
+                    } else {
+                        output = files.map(file => `${file.name} (${formatFileSize(file.size)})`).join('<br>');
+                    }
+                    break;
+                    
+                case 'time':
+                    output = new Date().toLocaleTimeString();
+                    break;
+                    
+                case 'date':
+                    output = new Date().toLocaleDateString();
+                    break;
+                    
+                case 'theme':
+                    toggleTheme();
+                    output = 'Theme toggled';
+                    break;
+                    
+                case 'rain':
+                    toggleRain();
+                    output = 'Rain effect toggled';
+                    break;
+                    
+                case 'notes':
+                    showWindow('notes');
+                    loadNotes();
+                    output = 'Notes opened';
+                    break;
+                    
+                case 'calc':
+                    showWindow('calc');
+                    output = 'Calculator opened';
+                    break;
+                    
+                case 'lofi':
+                    showWindow('lofi');
+                    if (!lofiAudio) {
+                        initLofiPlayer();
+                    }
+                    output = 'Lofi player opened';
+                    break;
+                    
+                case 'weather':
+                    output = getWeatherForecast();
+                    break;
+                    
+                case 'sysinfo':
+                    output = getSystemInfo();
+                    break;
+                    
+                case 'export':
+                    showWindow('export');
+                    output = 'Export window opened';
+                    break;
+                    
+                case 'reboot':
+                    location.reload();
+                    return;
+                    
+                case 'stop':
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        output = 'Playback stopped';
+                    } else {
+                        output = 'No audio playing';
+                    }
+                    break;
+                    
+                default:
+                    if (command.startsWith('play ')) {
+                        const filename = command.substring(5);
+                        playAudioFile(filename);
+                        output = `Attempting to play: ${filename}`;
+                    } else if (command.startsWith('calc ')) {
+                        const expr = command.substring(5);
+                        try {
+                            output = `${expr} = ${eval(expr)}`;
+                        } catch {
+                            output = `Invalid expression: ${expr}`;
+                        }
+                    } else {
+                        output = `Command not found: ${command}`;
+                    }
+            }
+            
+            terminalOutput.innerHTML += `<div>${output}</div>`;
+        }
+        
+        function getWeatherForecast() {
+            const weatherTypes = ['☀️ Sunny', '⛅ Partly Cloudy', '☁️ Cloudy', '🌧️ Rainy', '⛈️ Thunderstorm', '❄️ Snowy'];
+            const days = ['Today', 'Tomorrow', 'Day after tomorrow'];
+            const forecasts = days.map(day => {
+                const weather = weatherTypes[Math.floor(Math.random() * weatherTypes.length)];
+                const temp = Math.floor(Math.random() * 30) - 5;
+                return `${day}: ${weather}, ${temp}°C`;
+            });
+            return forecasts.join('<br>');
+        }
+        
+        function getSystemInfo() {
+            const files = JSON.parse(localStorage.getItem('private-space-files') || '[]');
+            const usedStorage = files.reduce((sum, file) => sum + file.size, 0);
+            const totalStorage = 100000000; // 100MB
+            
+            return `
+System Information:<br>
+- Files: ${files.length}<br>
+- Storage: ${Math.round(usedStorage / 1000000)}MB / ${Math.round(totalStorage / 1000000)}MB<br>
+- OS: Nexus OS 2025<br>
+- Terminal: v3.1.0<br>
+            `;
+        }
+        
+        // File management
+        const fileInput = document.getElementById('file-input');
+        const uploadStatus = document.getElementById('upload-status');
+        const desktop = document.getElementById('desktop');
+        const fileGrid = document.getElementById('file-grid');
+        const desktopMessage = document.getElementById('desktop-message');
+        
+        // Drag and drop functionality
+        const dropzone = document.getElementById('dropzone');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            desktop.addEventListener(eventName, preventDefaults, false);
+            dropzone.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            desktop.addEventListener(eventName, highlight, false);
+            dropzone.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            desktop.addEventListener(eventName, unhighlight, false);
+            dropzone.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            dropzone.classList.add('active');
+        }
+        
+        function unhighlight() {
+            dropzone.classList.remove('active');
+        }
+        
+        desktop.addEventListener('drop', handleDrop, false);
+        dropzone.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                uploadFiles(files);
+            }
+        }
+        
+        function uploadFiles(files) {
+            uploadStatus.textContent = `Uploading ${files.length} file(s)...`;
+            
+            // Store files in localStorage (simulated)
+            const storedFiles = JSON.parse(localStorage.getItem('private-space-files') || '[]');
+            
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    storedFiles.push({
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        lastModified: file.lastModified,
+                        content: e.target.result
+                    });
+                    
+                    localStorage.setItem('private-space-files', JSON.stringify(storedFiles));
+                    
+                    // Update UI
+                    refreshFileManager();
+                    createDesktopIcon(file);
+                    
+                    uploadStatus.textContent = `Upload complete: ${file.name}`;
+                    showNotification(`File uploaded: ${file.name}`);
+                    
+                    // Hide desktop message if files exist
+                    if (storedFiles.length > 0) {
+                        desktopMessage.classList.add('hidden');
+                    }
+                };
+                
+                if (file.type.startsWith('audio/')) {
+                    reader.readAsDataURL(file);
+                } else if (file.type.startsWith('image/')) {
+                    reader.readAsDataURL(file);
+                } else {
+                    reader.readAsText(file);
+                }
+            });
+        }
+        
+        fileInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files.length > 0) {
+                uploadFiles(files);
+                fileInput.value = '';
+            }
+        });
+        
+        function refreshFileManager() {
+            fileGrid.innerHTML = '';
+            const files = JSON.parse(localStorage.getItem('private-space-files') || '[]');
+            
+            files.forEach(file => {
+                const fileElement = document.createElement('div');
+                fileElement.className = 'file-icon grid-item';
+                
+                let icon = '📄';
+                if (file.type.startsWith('audio/')) icon = '🎵';
+                if (file.type.startsWith('image/')) icon = '🖼️';
+                if (file.type.startsWith('video/')) icon = '🎬';
+                if (file.type.startsWith('text/')) icon = '📝';
+                
+                fileElement.innerHTML = `
+                    <div class="text-4xl mb-2">${icon}</div>
+                    <div class="text-xs truncate">${file.name}</div>
+                    <div class="text-xs text-gray-500">${formatFileSize(file.size)}</div>
+                `;
+                
+                fileElement.addEventListener('dblclick', () => {
+                    if (file.type.startsWith('audio/')) {
+                        playAudioFile(file.name);
+                        showWindow('music');
+                    } else if (file.type.startsWith('image/')) {
+                        previewFile(file);
+                    } else if (file.type.startsWith('text/')) {
+                        previewFile(file);
+                    } else {
+                        terminalOutput.innerHTML += `<div>Opening file: ${file.name}</div>`;
+                        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                    }
+                });
+                
+                fileGrid.appendChild(fileElement);
+            });
+            
+            // Update desktop message visibility
+            if (files.length > 0) {
+                desktopMessage.classList.add('hidden');
+            } else {
+                desktopMessage.classList.remove('hidden');
+            }
+        }
+        
+        function createDesktopIcon(file) {
+            const icon = document.createElement('div');
+            icon.className = 'absolute file-icon grid-item';
+            icon.style.left = `${Math.random() * 80}%`;
+            icon.style.top = `${Math.random() * 80}%`;
+            
+            let fileIcon = '📄';
+            if (file.type.startsWith('audio/')) fileIcon = '🎵';
+            if (file.type.startsWith('image/')) fileIcon = '🖼️';
+            if (file.type.startsWith('video/')) fileIcon = '🎬';
+            if (file.type.startsWith('text/')) fileIcon = '📝';
+            
+            icon.innerHTML = `
+                <div class="text-4xl mb-2">${fileIcon}</div>
+                <div class="text-xs truncate">${file.name}</div>
+            `;
+            
+            icon.addEventListener('dblclick', () => {
+                const files = JSON.parse(localStorage.getItem('private-space-files') || '[]');
+                const matchedFile = files.find(f => f.name === file.name);
+                
+                if (matchedFile) {
+                    if (matchedFile.type.startsWith('audio/')) {
+                        playAudioFile(matchedFile.name);
+                        showWindow('music');
+                    } else if (matchedFile.type.startsWith('image/') || matchedFile.type.startsWith('text/')) {
+                        previewFile(matchedFile);
+                    }
+                }
+            });
+            
+            desktop.appendChild(icon);
+        }
+        
+        function previewFile(file) {
+            const previewContent = document.getElementById('preview-content');
+            previewContent.innerHTML = '';
+            
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = file.content;
+                img.className = 'preview-image';
+                previewContent.appendChild(img);
+            } else if (file.type.startsWith('text/')) {
+                const pre = document.createElement('pre');
+                pre.className = 'preview-text';
+                pre.textContent = file.content;
+                previewContent.appendChild(pre);
+            }
+            
+            showWindow('preview');
+            document.getElementById('preview-window').querySelector('.window-header div').textContent = `PREVIEW: ${file.name}`;
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+        
+        // Music player functionality
+        let currentAudio = null;
+        let currentTrackIndex = -1;
+        let audioFiles = [];
+        let audioContext;
+        let analyser;
+        let source;
+        
+        function playAudioFile(filename) {
+            const files = JSON.parse(localStorage.getItem('private-space-files') || '[]');
+            const audioFile = files.find(file => file.name === filename && file.type.startsWith('audio/'));
+            
+            if (!audioFile) {
+                terminalOutput.innerHTML += `<div>Audio file not found: ${filename}</div>`;
+                terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                return;
+            }
+            
+            if (currentAudio) {
+                currentAudio.pause();
+            }
+            
+            // Initialize audio context if not already done
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 64;
+            }
+            
+            currentAudio = new Audio(audioFile.content);
+            source = audioContext.createMediaElementSource(currentAudio);
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+            
+            currentAudio.play();
+            
+            document.getElementById('now-playing').textContent = filename;
+            
+            // Update progress bar and time
+            currentAudio.addEventListener('timeupdate', () => {
+                const progress = (currentAudio.currentTime / currentAudio.duration) * 100;
+                document.getElementById('music-progress').style.width = `${progress}%`;
+                
+                // Update time display
+                const currentTime = formatTime(currentAudio.currentTime);
+                const duration = formatTime(currentAudio.duration);
+                document.getElementById('track-time').textContent = `${currentTime} / ${duration}`;
+                
+                // Update visualizer
+                updateVisualizer();
+            });
+            
+            // When audio ends
+            currentAudio.addEventListener('ended', () => {
+                document.getElementById('music-progress').style.width = '0%';
+                document.getElementById('track-time').textContent = '0:00 / 0:00';
+                playNextTrack();
+            });
+            
+            // Start visualizer
+            updateVisualizer();
+        }
+        
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function playNextTrack() {
+            const files = JSON.parse(localStorage.getItem('private-space-files') || '[]');
+            const audioFiles = files.filter(file => file.type.startsWith('audio/'));
+            
+            if (audioFiles.length === 0) return;
+            
+            currentTrackIndex = (currentTrackIndex + 1) % audioFiles.length;
+            playAudioFile(audioFiles[currentTrackIndex].name);
+        }
+        
+        document.getElementById('play-pause').addEventListener('click', () => {
+            if (currentAudio) {
+                if (currentAudio.paused) {
+                    currentAudio.play();
+                } else {
+                    currentAudio.pause();
+                }
+            } else {
+                // Play first audio file if none is playing
+                const files = JSON.parse(localStorage.getItem('private-space-files') || '[]');
+                const audioFiles = files.filter(file => file.type.startsWith('audio/'));
+                if (audioFiles.length > 0) {
+                    currentTrackIndex = 0;
+                    playAudioFile(audioFiles[0].name);
+                }
+            }
+        });
+        
+        document.getElementById('next-track').addEventListener('click', playNextTrack);
+        
+        document.getElementById('prev-track').addEventListener('click', () => {
+            const files = JSON.parse(localStorage.getItem('private-space-files') || '[]');
+            const audioFiles = files.filter(file => file.type.startsWith('audio/'));
+            
+            if (audioFiles.length === 0) return;
+            
+            currentTrackIndex = (currentTrackIndex - 1 + audioFiles.length) % audioFiles.length;
+            playAudioFile(audioFiles[currentTrackIndex].name);
+        });
+        
+        document.getElementById('volume-up').addEventListener('click', () => {
+            if (currentAudio) {
+                currentAudio.volume = Math.min(1, currentAudio.volume + 0.1);
+            }
+        });
+        
+        document.getElementById('volume-down').addEventListener('click', () => {
+            if (currentAudio) {
+                currentAudio.volume = Math.max(0, currentAudio.volume - 0.1);
+            }
+        });
+        
+        // Lofi player functionality
+        let lofiAudio = null;
+        let lofiTrackIndex = 0;
+        const lofiTracks = [
+            { name: "Nightfall", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+            { name: "Coffee Shop", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+            { name: "Rainy Day", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
+        ];
+        
+        function initLofiPlayer() {
+            if (lofiAudio) return;
+            
+            lofiAudio = new Audio(lofiTracks[0].url);
+            document.getElementById('lofi-time').textContent = '0:00 / 0:00';
+            
+            lofiAudio.addEventListener('timeupdate', () => {
+                const progress = (lofiAudio.currentTime / lofiAudio.duration) * 100;
+                document.getElementById('lofi-progress').style.width = `${progress}%`;
+                
+                const currentTime = formatTime(lofiAudio.currentTime);
+                const duration = formatTime(lofiAudio.duration);
+                document.getElementById('lofi-time').textContent = `${currentTime} / ${duration}`;
+                
+                updateLofiVisualizer();
+            });
+            
+            lofiAudio.addEventListener('ended', () => {
+                playNextLofiTrack();
+            });
+            
+            updateLofiVisualizer();
+        }
+        
+        function playLofiTrack() {
+            if (!lofiAudio) return;
+            
+            if (lofiAudio.paused) {
+                lofiAudio.play();
+                document.getElementById('lofi-play').textContent = '⏸';
+            } else {
+                lofiAudio.pause();
+                document.getElementById('lofi-play').textContent = '⏯';
+            }
+        }
+        
+        function playNextLofiTrack() {
+            lofiTrackIndex = (lofiTrackIndex + 1) % lofiTracks.length;
+            lofiAudio.src = lofiTracks[lofiTrackIndex].url;
+            lofiAudio.play();
+            document.getElementById('lofi-play').textContent = '⏸';
+        }
+        
+        function playPrevLofiTrack() {
+            lofiTrackIndex = (lofiTrackIndex - 1 + lofiTracks.length) % lofiTracks.length;
+            lofiAudio.src = lofiTracks[lofiTrackIndex].url;
+            lofiAudio.play();
+            document.getElementById('lofi-play').textContent = '⏸';
+        }
+        
+        document.getElementById('lofi-play').addEventListener('click', playLofiTrack);
+        document.getElementById('lofi-next').addEventListener('click', playNextLofiTrack);
+        document.getElementById('lofi-prev').addEventListener('click', playPrevLofiTrack);
+        
+        // Notes functionality
+        function loadNotes() {
+            const notes = localStorage.getItem('private-space-notes') || '';
+            document.getElementById('notes-text').value = notes;
+        }
+        
+        document.getElementById('save-note').addEventListener('click', () => {
+            const notes = document.getElementById('notes-text').value;
+            localStorage.setItem('private-space-notes', notes);
+            showNotification('Notes saved');
+        });
+        
+        document.getElementById('download-note').addEventListener('click', () => {
+            const notes = document.getElementById('notes-text').value;
+            const blob = new Blob([notes], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'nexus-notes.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showNotification('Notes downloaded');
+        });
+        
+        document.getElementById('clear-note').addEventListener('click', () => {
+            document.getElementById('notes-text').value = '';
+            showNotification('Notes cleared');
+        });
+        
+        // Calculator functionality
+        function appendToCalc(value) {
+            const display = document.getElementById('calc-display');
+            display.value += value;
+        }
+        
+        function clearCalc() {
+            document.getElementById('calc-display').value = '';
+        }
+        
+        function calculate() {
+            const display = document.getElementById('calc-display');
+            try {
+                display.value = eval(display.value);
+            } catch {
+                display.value = 'Error';
+            }
+        }
+        
+        // Export data functionality
+        document.getElementById('export-data').addEventListener('click', () => {
+            // Get all data from localStorage
+            const files = JSON.parse(localStorage.getItem('private-space-files') || '[]');
+            const notes = localStorage.getItem('private-space-notes') || '';
+            
+            // Create a data object
+            const exportData = {
+                files: files,
+                notes: notes,
+                timestamp: new Date().toISOString(),
+                version: 'Nexus Private Space 2025'
+            };
+            
+            // Convert to JSON
+            const jsonData = JSON.stringify(exportData, null, 2);
+            
+            // Create download link
+            const blob = new Blob([jsonData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'nexus-private-space-export.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showNotification('Data exported successfully');
+        });
+        
+        // Theme toggle
+        function toggleTheme() {
+            if (document.body.classList.contains('bg-black')) {
+                // Switch to light theme
+                document.body.classList.remove('bg-black');
+                document.body.classList.add('bg-white');
+                document.body.classList.remove('text-white');
+                document.body.classList.add('text-black');
+                
+                document.querySelectorAll('.window').forEach(window => {
+                    window.classList.remove('bg-black');
+                    window.classList.add('bg-white');
+                });
+                
+                var(--primary-bg) = '#fff';
+                var(--secondary-bg) = '#eee';
+                var(--accent) = '#000';
+                var(--text) = '#000';
+                var(--text-secondary) = '#555';
+            } else {
+                // Switch to dark theme
+                document.body.classList.add('bg-black');
+                document.body.classList.remove('bg-white');
+                document.body.classList.add('text-white');
+                document.body.classList.remove('text-black');
+                
+                document.querySelectorAll('.window').forEach(window => {
+                    window.classList.add('bg-black');
+                    window.classList.remove('bg-white');
+                });
+                
+                var(--primary-bg) = '#000';
+                var(--secondary-bg) = '#111';
+                var(--accent) = '#fff';
+                var(--text) = '#fff';
+                var(--text-secondary) = '#aaa';
+            }
+        }
+        
+        document.getElementById('toggle-theme').addEventListener('click', toggleTheme);
+        
+        // Rain effect toggle
+        function toggleRain() {
+            const rainEffect = document.getElementById('rain-effect');
+            rainEffect.innerHTML = '';
+            
+            if (rainEffect.hasAttribute('data-active')) {
+                rainEffect.removeAttribute('data-active');
+            } else {
+                rainEffect.setAttribute('data-active', 'true');
+                createRain();
+            }
+        }
+        
+        function createRain() {
+            const rainEffect = document.getElementById('rain-effect');
+            if (!rainEffect.hasAttribute('data-active')) return;
+            
+            rainEffect.innerHTML = '';
+            
+            for (let i = 0; i < 100; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'rain-drop';
+                drop.style.left = `${Math.random() * 100}%`;
+                drop.style.height = `${Math.random() * 20 + 10}px`;
+                drop.style.animationDuration = `${Math.random() * 0.5 + 0.5}s`;
+                drop.style.animationDelay = `${Math.random() * 2}s`;
+                rainEffect.appendChild(drop);
+            }
+            
+            setTimeout(createRain, 2000);
+        }
+        
+        document.getElementById('toggle-rain').addEventListener('click', toggleRain);
+        
+        // Initialize
+        refreshFileManager();
+        
+        // Show welcome notification
+        setTimeout(() => {
+            showNotification('Welcome to Nexus Private Space 2025');
+        }, 1000);
+    </script>
+</body>
+</html>
